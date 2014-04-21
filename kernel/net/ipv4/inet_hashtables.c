@@ -117,7 +117,6 @@ int __inet_inherit_port(struct sock *sk, struct sock *child)
 	struct inet_bind_hashbucket *head = &table->bhash[bhash];
 	struct inet_bind_bucket *tb;
 
-	spin_lock(&head->lock);
 	tb = inet_csk(sk)->icsk_bind_hash;
 	if (tb->port != port) {
 		/* NOTE: using tproxy and redirecting skbs to a proxy
@@ -126,6 +125,8 @@ int __inet_inherit_port(struct sock *sk, struct sock *child)
 		 * as that of the child socket. We have to look up or
 		 * create a new bind bucket for the child here. */
 		struct hlist_node *node;
+			
+		spin_lock(&head->lock);
 		inet_bind_bucket_for_each(tb, node, &head->chain) {
 			if (net_eq(ib_net(tb), sock_net(sk)) &&
 			    tb->port == port)
@@ -139,10 +140,11 @@ int __inet_inherit_port(struct sock *sk, struct sock *child)
 				return -ENOMEM;
 			}
 		}
+		sk_add_bind_node(child, &tb->owners);
+		inet_csk(child)->icsk_bind_hash = tb;
+		spin_unlock(&head->lock);
 	}
-	sk_add_bind_node(child, &tb->owners);
-	inet_csk(child)->icsk_bind_hash = tb;
-	spin_unlock(&head->lock);
+	inet_csk(child)->icsk_bind_hash = NULL;
 
 	return 0;
 }
