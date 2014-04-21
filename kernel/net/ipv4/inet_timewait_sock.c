@@ -32,15 +32,17 @@ static void __inet_twsk_kill(struct inet_timewait_sock *tw,
 	sk_nulls_node_init(&tw->tw_node);
 	spin_unlock(lock);
 
+	if (tw->tw_tb) {	
 	/* Disassociate with bind bucket. */
-	bhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), tw->tw_num,
-			hashinfo->bhash_size)];
-	spin_lock(&bhead->lock);
-	tb = tw->tw_tb;
-	__hlist_del(&tw->tw_bind_node);
-	tw->tw_tb = NULL;
-	inet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);
-	spin_unlock(&bhead->lock);
+		bhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), tw->tw_num,
+				hashinfo->bhash_size)];
+		spin_lock(&bhead->lock);
+		tb = tw->tw_tb;
+		__hlist_del(&tw->tw_bind_node);
+		tw->tw_tb = NULL;
+		inet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);
+		spin_unlock(&bhead->lock);
+	}
 #ifdef SOCK_REFCNT_DEBUG
 	if (atomic_read(&tw->tw_refcnt) != 1) {
 		printk(KERN_DEBUG "%s timewait_sock %p refcnt=%d\n",
@@ -86,13 +88,18 @@ void __inet_twsk_hashdance(struct inet_timewait_sock *tw, struct sock *sk,
 	   Note, that any socket with inet->num != 0 MUST be bound in
 	   binding cache, even if it is closed.
 	 */
-	bhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), inet->num,
-			hashinfo->bhash_size)];
-	spin_lock(&bhead->lock);
-	tw->tw_tb = icsk->icsk_bind_hash;
-	WARN_ON(!icsk->icsk_bind_hash);
-	inet_twsk_add_bind_node(tw, &tw->tw_tb->owners);
-	spin_unlock(&bhead->lock);
+
+	if (icsk->icsk_bind_hash) {
+		bhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), inet->num,
+				hashinfo->bhash_size)];
+		spin_lock(&bhead->lock);
+		tw->tw_tb = icsk->icsk_bind_hash;
+		WARN_ON(!icsk->icsk_bind_hash);
+		inet_twsk_add_bind_node(tw, &tw->tw_tb->owners);
+		spin_unlock(&bhead->lock);
+	} else {
+		tw->tw_tb = NULL;
+	}
 
 	spin_lock(lock);
 
