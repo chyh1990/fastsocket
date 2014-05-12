@@ -70,9 +70,9 @@
 
 #include "kmap_skb.h"
 
-#define DPRINTK(msg, args...) 
+//#define DPRINTK(msg, args...) 
 
-//#define DPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args);
+#define DPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args);
 
 static struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
@@ -299,7 +299,7 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	if (!data)
 		goto nodata;
 init:
-	DPRINTK("Initialize skb[%d] %p\n", skb->pool_id, skb);
+	DPRINTK("Initialize skb[%d] 0x%p\n", skb->pool_id, skb);
 
 	/*
 	 * Only clear those fields we need to clear, not those that we will
@@ -370,7 +370,8 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	int node = dev->dev.parent ? dev_to_node(dev->dev.parent) : -1;
 	struct sk_buff *skb;
 
-	if (enable_skb_pool) {
+	//if (enable_skb_pool) {
+	if ((enable_skb_pool & ENABLE_COMMON_SKB_POOL) && likely(in_softirq())) {
 		skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, POOL_SKB, node);
 		DPRINTK("Allocate pool skb 0x%p\n", skb);
 	} else {
@@ -511,10 +512,10 @@ static inline void kfree_pool_skb_clone(struct sk_buff *skb)
 			 * No need to disable softirq here. */
 			__skb_queue_head(&skb_pool->clone_free_list, skb);
 		}
-		DPRINTK("Free clone pool skb[%d] 0x%p on CPU %d into free list\n", skb->pool_id, skb, smp_processor_id());
+		DPRINTK("Free clone_pool skb[%d] 0x%p on CPU %d into free list\n", skb->pool_id, skb, smp_processor_id());
 	} else {
 		skb_queue_head(&skb_pool->clone_recyc_list, skb);
-		DPRINTK("Free clone pool skb[%d] 0x%p on CPU %d into recycle list\n", skb->pool_id, skb, smp_processor_id());
+		DPRINTK("Free clone_pool skb[%d] 0x%p on CPU %d into recycle list\n", skb->pool_id, skb, smp_processor_id());
 	}
 }
 
@@ -537,10 +538,10 @@ static inline void kfree_pool_skb(struct sk_buff *skb)
 			local_bh_enable();
 			//printk(KERN_DEBUG "Free pool skb 0x%p NOT in softirq\n", skb);
 		}
-		DPRINTK("Free clone pool skb[%d] 0x%p on CPU %d into free list\n", skb->pool_id, skb, smp_processor_id());
+		DPRINTK("Free pool skb[%d] 0x%p on CPU %d into free list\n", skb->pool_id, skb, smp_processor_id());
 	} else {
 		skb_queue_head(&skb_pool->recyc_list, skb);
-		DPRINTK("Free clone pool skb[%d] 0x%p on CPU %d into recycle list\n", skb->pool_id, skb, smp_processor_id());
+		DPRINTK("Free pool skb[%d] 0x%p on CPU %d into recycle list\n", skb->pool_id, skb, smp_processor_id());
 	}
 }
 

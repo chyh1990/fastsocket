@@ -38,14 +38,7 @@ static inline int fastsocket_limit(void)
 	return __ratelimit(&fastsocket_ratelimit_state);
 }
 
-//#define DPRINTK(level, msg, args...) {}
-
-#ifndef DPRINTK
-#define DPRINTK(level, msg, args...) ({\
-	if (level < fsocket_get_dbg_level()) \
-		printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args); \
-	})
-#endif
+#define DPRINTK(level, msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args)
 
 #define EPRINTK_LIMIT(level, msg, args...) ({\
 	if (fastsocket_limit() && level < fsocket_get_dbg_level()) \

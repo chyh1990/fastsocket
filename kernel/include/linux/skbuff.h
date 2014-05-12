@@ -32,8 +32,8 @@
 
 #include <linux/hardirq.h>
 
-//#define FPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d] %s:%d\t" msg, smp_processor_id(), __FUNCTION__, __LINE__, ## args);
-#define FPRINTK(msg, args...)
+#define FPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d] %s:%d\t" msg, smp_processor_id(), __FUNCTION__, __LINE__, ## args);
+//#define FPRINTK(msg, args...)
 
 /* Don't change this without changing skb_csum_unnecessary! */
 #define CHECKSUM_NONE 0
@@ -501,13 +501,13 @@ static inline struct sk_buff *alloc_skb(unsigned int size,
 {
 	struct sk_buff *skb;
 
-	if ((enable_skb_pool & ENABLE_COMMON_SKB_POOL) && likely(in_softirq())) {
+	//if ((enable_skb_pool & ENABLE_COMMON_SKB_POOL) && likely(in_softirq())) {
 		//printk(KERN_DEBUG "Allocate pool skb in interrupt\n");
-		skb = __alloc_skb(size, priority, POOL_SKB, -1);
-	} else {
+	//	skb = __alloc_skb(size, priority, POOL_SKB, -1);
+	//} else {
 		//printk(KERN_DEBUG "Allocate pool skb NOT in softirq\n");
 		skb = __alloc_skb(size, priority, SLAB_SKB, -1);
-	}
+	//}
 
 	FPRINTK("Allocate skb 0x%p\n", skb);
 
@@ -1547,13 +1547,13 @@ static inline struct sk_buff *__dev_alloc_skb(unsigned int length,
 {
 	struct sk_buff *skb;
 
-	if (enable_skb_pool & ENABLE_COMMON_SKB_POOL)  {
-		skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, POOL_SKB, -1);
-		FPRINTK("Allocate pool skb 0x%p\n", skb);
-	} else {
+	//if (enable_skb_pool & ENABLE_COMMON_SKB_POOL)  {
+	//	skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, POOL_SKB, -1);
+	//	FPRINTK("Allocate pool skb 0x%p\n", skb);
+	//} else {
 		skb = alloc_skb(length + NET_SKB_PAD, gfp_mask);
-		FPRINTK("Allocate regular skb 0x%p\n", skb);
-	}
+	//	FPRINTK("Allocate regular skb 0x%p\n", skb);
+	//}
 
 	if (likely(skb))
 		skb_reserve(skb, NET_SKB_PAD);
