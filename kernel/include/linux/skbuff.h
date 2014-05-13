@@ -501,15 +501,16 @@ static inline struct sk_buff *alloc_skb(unsigned int size,
 {
 	struct sk_buff *skb;
 
-	//if ((enable_skb_pool & ENABLE_COMMON_SKB_POOL) && likely(in_softirq())) {
+	if ((enable_skb_pool & ENABLE_COMMON_SKB_POOL) && likely(in_softirq())) {
 		//printk(KERN_DEBUG "Allocate pool skb in interrupt\n");
-	//	skb = __alloc_skb(size, priority, POOL_SKB, -1);
-	//} else {
+		skb = __alloc_skb(size, priority, POOL_SKB, -1);
+	} else {
 		//printk(KERN_DEBUG "Allocate pool skb NOT in softirq\n");
 		skb = __alloc_skb(size, priority, SLAB_SKB, -1);
-	//}
+	}
 
-	FPRINTK("Allocate skb 0x%p\n", skb);
+	//FPRINTK("Allocate skb 0x%p\n", skb);
+	FPRINTK("Allocate skb[%d] 0x%p from %pS from %pS\n", skb->pool_id, skb, __builtin_return_address(1), __builtin_return_address(2));
 
 	return skb;
 }

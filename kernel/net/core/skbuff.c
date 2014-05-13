@@ -280,6 +280,7 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 		if (skb) {
 			data = skb->data_cache;
 			skb->pool_id = smp_processor_id();
+			DPRINTK("Allocate pool skb[%d] 0x%p\n", skb->pool_id, skb);
 			goto init;
 		}
 		//} else 
@@ -299,7 +300,7 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	if (!data)
 		goto nodata;
 init:
-	DPRINTK("Initialize skb[%d] 0x%p\n", skb->pool_id, skb);
+	DPRINTK("Initialize skb[%d] 0x%p from %pS from %pS\n", skb->pool_id, skb, __builtin_return_address(1), __builtin_return_address(2));
 
 	/*
 	 * Only clear those fields we need to clear, not those that we will
@@ -558,6 +559,7 @@ static void kfree_skbmem(struct sk_buff *skb)
 	switch (skb->fclone) {
 	case SKB_FCLONE_UNAVAILABLE:
 		if (skb->pool_id >= 0) {
+			DPRINTK("Free pool skb[%d] 0x%p\n", skb->pool_id, skb);
 			kfree_pool_skb(skb);
 			//struct skb_pool *skb_pool;
 			//
@@ -594,6 +596,7 @@ static void kfree_skbmem(struct sk_buff *skb)
 
 	case SKB_FCLONE_ORIG:
 		fclone_ref = (atomic_t *) (skb + 2);
+		DPRINTK("Free origin skb[%d] 0x%p[%d]\n", skb->pool_id, skb, atomic_read(fclone_ref));
 		if (atomic_dec_and_test(fclone_ref)) {
 			if (skb->pool_id >= 0)
 				kfree_pool_skb_clone(skb);
@@ -604,6 +607,7 @@ static void kfree_skbmem(struct sk_buff *skb)
 
 	case SKB_FCLONE_CLONE:
 		fclone_ref = (atomic_t *) (skb + 1);
+		DPRINTK("Free clone skb[%d] 0x%p[%d]\n", skb->pool_id, skb, atomic_read(fclone_ref));
 		other = skb - 1;
 
 		/* The clone portion is available for
@@ -667,6 +671,7 @@ void __kfree_skb(struct sk_buff *skb)
 {
 	skb_release_all(skb);
 	kfree_skbmem(skb);
+	DPRINTK("Free whatever skb[%d] 0x%p from %pS from %pS\n", skb->pool_id, skb, __builtin_return_address(1), __builtin_return_address(2));
 }
 EXPORT_SYMBOL(__kfree_skb);
 

@@ -139,7 +139,7 @@
 #include <net/inet_hashtables.h>
 #include <net/tcp.h>
 
-//#define DPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args);
+#define DPRINTK(msg, args...) printk(KERN_DEBUG "Fastsocket [CPU%d][PID-%d] %s:%d\t" msg, smp_processor_id(), current->pid, __FUNCTION__, __LINE__, ## args);
 
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
@@ -2999,6 +2999,7 @@ int netif_receive_skb(struct sk_buff *skb)
 	struct rps_dev_flow voidflow, *rflow = &voidflow;
 	int cpu, ret;
 
+	DPRINTK("Here we have skb[%d] 0x%p\n", skb->pool_id, skb);
 
 	if (enable_direct_tcp)
 		netif_direct_tcp(skb);
@@ -3232,6 +3233,8 @@ static inline gro_result_t __napi_gro_receive_gr(struct napi_struct *napi,
 						 struct sk_buff *skb)
 {
 	skb_gro_reset_offset(skb);
+
+	DPRINTK("Here we have skb[%d] 0x%p\n", skb->pool_id, skb);
 
 	return napi_skb_finish(__napi_gro_receive(napi, skb), skb);
 }

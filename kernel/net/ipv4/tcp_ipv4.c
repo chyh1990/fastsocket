@@ -1633,7 +1633,7 @@ int tcp_v4_rcv(struct sk_buff *skb)
 			FPRINTK("Skb 0x%p skip listen socket 0x%p\n", skb, sk);
 		}
 	} else {
-		FPRINTK("Skb 0x%p hit common socket 0x%p\n", skb, sk);
+		FPRINTK("Skb 0x%p hit common socket 0x%p[%u]\n", skb, sk, ntohs(th->dest));
 	}
 
 process:
