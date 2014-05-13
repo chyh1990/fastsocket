@@ -302,6 +302,8 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 init:
 	DPRINTK("Initialize skb[%d] 0x%p from %pS from %pS\n", skb->pool_id, skb, __builtin_return_address(1), __builtin_return_address(2));
 
+	trace_printk("%s Allocate skb 0x%p[%d]\n", __FUNCTION__, skb, skb->pool_id);
+
 	/*
 	 * Only clear those fields we need to clear, not those that we will
 	 * actually initialise below. Hence, don't put any more fields after
@@ -555,6 +557,8 @@ static void kfree_skbmem(struct sk_buff *skb)
 	atomic_t *fclone_ref;
 
 	//barrier();
+	
+	trace_printk("%s Free skb 0x%p[%d]\n", __FUNCTION__, skb, skb->pool_id);
 
 	switch (skb->fclone) {
 	case SKB_FCLONE_UNAVAILABLE:
