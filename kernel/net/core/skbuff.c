@@ -617,6 +617,9 @@ static void kfree_skbmem(struct sk_buff *skb)
 				kmem_cache_free(skbuff_fclone_cache, other);
 		}
 		break;
+
+	default:
+		BUG_ON(1);	
 	}
 }
 
